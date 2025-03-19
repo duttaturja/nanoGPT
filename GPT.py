@@ -149,12 +149,19 @@ class GPT(nn.Module):
         return model
     
     
-# Usage
+#----------------------------------------------------------------Usage----------------------------------------------------------------
 num_return_sequences = 5
 max_length = 30
 
+# auto device detection
 device = "cpu"
+if torch.cuda.is_available():
+    device = "cuda"
+elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    device = "mps"
+print(f"running on device: {device}")
 
+# load the pretrained model from huggingface
 model = GPT.from_pretrained('gpt2')
 model.eval()
 model.to(device)
