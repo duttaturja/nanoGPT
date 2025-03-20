@@ -156,9 +156,9 @@ max_length = 30
 # auto device detection
 device = "cpu"
 if torch.cuda.is_available():
-    device = "cuda"
+    device = "cuda" # gpu device
 elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-    device = "mps"
+    device = "mps" # Mac device
 print(f"running on device: {device}")
 
 # load the pretrained model from huggingface
@@ -167,6 +167,34 @@ model.eval()
 model.to(device)
 print("didnt fucking crash! LFG")
 
+# get a data batch
+import tiktoken
+import tiktoken
+enc = tiktoken.get_encoding('gpt2')
+with open('input.txt', 'r') as f:
+    text = f.read()
+text = text[:1000]
+tokens = enc.encode(text)
+B, T = 4, 32
+buf = torch.tensor(tokens[:B*T + 1])
+x = buf[:-1].view(B, T)
+y = buf[1:].view(B, T)
+
+# get logits
+model = GPT(GPTConfig())
+model.to(device)
+logits, loss = model(x, y)
+
+# print the logits
+logits = logits[0] 
+print(logits.shape)
+print(loss)
+import sys; sys.exit(0)
+
+
+
+
+#------------------------------------GPT2 driver code-------------------------------------------
 # prefix tokens
 import tiktoken
 enc = tiktoken.get_encoding('gpt2')
