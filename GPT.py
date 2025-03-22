@@ -40,6 +40,7 @@ class MLP(nn.Module):
         self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd)
         self.gelu = nn.GELU(approximate='tanh')
         self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd)
+        self.c_proj.NANOGPT_SCALE_INIT = 1 # regularization parameter, scales the output of MLP to prevent it from growing too large
 
     def forward(self, x):
         x = self.c_fc(x)
@@ -82,6 +83,23 @@ class GPT(nn.Module):
             
         ))
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+
+        # weight sharing scheme
+        self.transformer.wte.weight = self.lm_head.weight
+
+        #init params
+        self.apply(self._init_weights)
+    
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            std = 0.02
+            if hasattr(module, 'NANOGPT_SCALE_INIT'):
+                std *= (2 * self.config.n_layers) ** -0.5
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(self, idx, targets=None):
         # idx is of shape (B, T)
@@ -199,6 +217,10 @@ model = GPT.from_pretrained('gpt2')
 model.eval()
 model.to(device)
 print("didnt fucking crash! LFG")
+
+torch.manual_seed(1337)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(1337)
 
 # getting the dataloaderlite in the action
 train_loader = DataLoaderLite(B=4, T=32)
