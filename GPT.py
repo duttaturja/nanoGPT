@@ -205,6 +205,8 @@ num_return_sequences = 5
 max_length = 30
 
 # auto device detection
+import time
+
 device = "cpu"
 if torch.cuda.is_available():
     device = "cuda" # gpu device
@@ -223,7 +225,20 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(1337)
 
 # getting the dataloaderlite in the action
-train_loader = DataLoaderLite(B=4, T=32)
+train_loader = DataLoaderLite(B=4, T=256)
+
+# short note:
+""" optimally the B = 16 and T = 1024 if professional GPU available and
+the given value of B = 4 and T = 256 is the optimal value for co-lab users
+if you are a dont have a gpu and using only cpu in your pc run this code on colab
+do not run this on any configuration while using the cpu in your pc result of 
+running this only in the cpu is given below:
+step 0, loss: 10.9125, dt: 4463.28ms, tok/sec: 0.23
+whereas the output for colab while CUDA available is:
+step 0, loss: 10.9125, dt: 309.73ms, tok/sec: 3306.10"""
+
+# tf32 precision for 300ms training time
+torch.set_float32_matmul_precision('high')
 
 # get logits
 model = GPT(GPTConfig())
@@ -233,14 +248,19 @@ model.to(device)
 # optimize!
 optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 for i in range(50):
+    t0 = time.time()
     x, y = train_loader.next_batch()
     x, y = x.to(device), y.to(device)
     optimizer.zero_grad()
     logits, loss = model(x, y)
     loss.backward()
     optimizer.step()
-    print(f"step {i}, loss: {loss.item():.4f}")
-
+    if (device == 'cuda'):
+        torch.cuda.synchronize()
+    t1 = time.time()
+    dt = (t1-t0) * 1000 # time difference in miliseconds
+    tokens_per_sec = (train_loader.B * train_loader.T) / dt
+    print(f"step {i}, loss: {loss.item():.4f}, dt: {dt:.2f}ms, tok/sec: {tokens_per_sec:.2f}")
 
 
 import sys; sys.exit(0)
