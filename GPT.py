@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+import math
 
 
 class CasualSelfAttention(nn.Module):
@@ -33,7 +34,11 @@ class CasualSelfAttention(nn.Module):
         y = self.c_proj(y)
         return y
 
-
+""" The demonstration of how the torch.compile works
+class TanhGELU(nn.Module): 
+    def forward(self,input):
+        return 0.5 * input * (1.0 + torch.tanh(math.sqrt(2.0/ math.pi) * (input + 0.44715 * torch.pow(input, 3.0))))
+"""
 class MLP(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -225,24 +230,26 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(1337)
 
 # getting the dataloaderlite in the action
-train_loader = DataLoaderLite(B=4, T=256)
+train_loader = DataLoaderLite(B=4, T=1024)
 
 # short note:
 """ optimally the B = 16 and T = 1024 if professional GPU available and
-the given value of B = 4 and T = 256 is the optimal value for co-lab users
+the given value of B = 4 and T = 1024 is the optimal value for co-lab users
 if you are a dont have a gpu and using only cpu in your pc run this code on colab
 do not run this on any configuration while using the cpu in your pc result of 
 running this only in the cpu is given below:
-step 0, loss: 10.9125, dt: 4463.28ms, tok/sec: 0.23
+step 0, loss: 10.92828369140625, dt: 28752.20ms, tok/sec: 142.46
+step 1, loss: 9.512195587158203, dt: 1433.08ms, tok/sec: 2858.17
 whereas the output for colab while CUDA available is:
-step 0, loss: 10.9125, dt: 309.73ms, tok/sec: 3306.10"""
+step 0, loss: 10.9125, dt: 93ms, tok/sec: 1176093.62"""
 
 # tf32 precision for 300ms training time
 torch.set_float32_matmul_precision('high')
 
 # get logits
-model = GPT(GPTConfig())
+model = GPT(GPTConfig(vocab_size=50304))
 model.to(device)
+model = torch.compile(model)
 # logits, loss = model(x, y)
 
 # optimize!
@@ -252,7 +259,9 @@ for i in range(50):
     x, y = train_loader.next_batch()
     x, y = x.to(device), y.to(device)
     optimizer.zero_grad()
-    logits, loss = model(x, y)
+    with torch.autocast(device_type=device, dtype=torch.bfloat16):
+        logits, loss = model(x, y)
+    # import code; code.interact(local=locals())
     loss.backward()
     optimizer.step()
     if (device == 'cuda'):
@@ -260,7 +269,7 @@ for i in range(50):
     t1 = time.time()
     dt = (t1-t0) * 1000 # time difference in miliseconds
     tokens_per_sec = (train_loader.B * train_loader.T) / dt
-    print(f"step {i}, loss: {loss.item():.4f}, dt: {dt:.2f}ms, tok/sec: {tokens_per_sec:.2f}")
+    print(f"step {i} | loss: {loss.item():.4f} | dt: {dt:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
 
 
 import sys; sys.exit(0)
