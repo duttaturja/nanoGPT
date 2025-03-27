@@ -61,7 +61,7 @@ python GPT.py
 nanoGPT/
 ├── .gitignore          # Ignore unnecessary files in version control
 ├── GPT.py              # Core GPT model implementation
-├── input.txt           # Sample input text for testing
+├── input.txt           # Sample input text for training
 ├── play.ipynb          # Jupyter Notebook for interactive experimentation
 ├── requirements.txt    # Python dependencies
 ├── LICENSE             # MIT License
@@ -70,8 +70,9 @@ nanoGPT/
 
 ## References
 
-- [nanoGPT by Andrej Karpathy](https://github.com/karpathy/build-nanoGPT)
+- [build-nanoGPT by Andrej Karpathy](https://github.com/karpathy/build-nanoGPT)
 - [Let's reproduce GPT-2 (124M).](https://www.youtube.com/watch?v=l8pRSuU81PU)
+- [Andrej Karpathy](https://github.com/karpathy)
 
 ## License
 
