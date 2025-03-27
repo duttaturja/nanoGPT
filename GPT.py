@@ -252,9 +252,28 @@ model.to(device)
 model = torch.compile(model)
 # logits, loss = model(x, y)
 
+# learning rate scheduler
+max_lr = 3e-4
+min_lr = max_lr * 0.1
+warmup_steps = 10
+max_steps = 50
+
+def get_lr(it):
+    # 1) linear warmup for warmup_iters steps
+    if it < warmup_steps:
+        return max_lr * (it+1) / warmup_steps
+    # 2) linear decay from warmup_steps to max_steps
+    if it > max_steps:
+        return min_lr
+    # 3) in between, use cosine decay from max_lr to min_lr
+    decay_ratio = (it - warmup_steps) / (max_steps - warmup_steps)
+    assert 0 <= decay_ratio <= 1
+    coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio)) # coeff starts at 1 and goes to 0
+    return min_lr + coeff * (max_lr - min_lr)
+
 # optimize!
-optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
-for i in range(50):
+optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, betas=(0.9, 0.95), eps=1e-8)
+for step in range(max_steps):
     t0 = time.time()
     x, y = train_loader.next_batch()
     x, y = x.to(device), y.to(device)
@@ -263,13 +282,19 @@ for i in range(50):
         logits, loss = model(x, y)
     # import code; code.interact(local=locals())
     loss.backward()
+    norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    #determine and set the learing rate for this iteration
+    lr = get_lr(step)
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
     optimizer.step()
     if (device == 'cuda'):
-        torch.cuda.synchronize()
+        torch.cuda.synchronize() # wait for the GPU to finish work and sync with CPU
     t1 = time.time()
-    dt = (t1-t0) * 1000 # time difference in miliseconds
-    tokens_per_sec = (train_loader.B * train_loader.T) / dt
-    print(f"step {i} | loss: {loss.item():.4f} | dt: {dt:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
+    dt = (t1-t0)  # time difference in seconds
+    training_processed = (train_loader.B * train_loader.T) # total tokens processed in this batch (B * T)
+    tokens_per_sec = training_processed / dt
+    print(f"step {step:2d} | loss: {loss.item():.4f} | lr: {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
 
 
 import sys; sys.exit(0)
