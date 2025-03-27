@@ -70,8 +70,8 @@ nanoGPT/
 
 ## References
 
-- [nanoGPT by Andrej Karpathy](https://github.com/karpathy/nanoGPT)
-- [Let's build GPT: from scratch, in code, spelled out.](https://www.youtube.com/watch?v=kCc8FmEb1nY)
+- [nanoGPT by Andrej Karpathy](https://github.com/karpathy/build-nanoGPT)
+- [Let's reproduce GPT-2 (124M).](https://www.youtube.com/watch?v=l8pRSuU81PU)
 
 ## License
 
