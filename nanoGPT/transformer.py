@@ -3,17 +3,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 import inspect
 import math
+import torch.optim as optim
 
-
-from model import Block
-from config import GPTConfig
+from .model import Block
+from .config import GPTConfig
 
 class GPT(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
 
-        self.transformer = nn.ModuleList(dict(
+        self.transformer = nn.ModuleDict(dict(
             wte = nn.Embedding(config.vocab_size, config.n_embd),
             wpe = nn.Embedding(config.block_size, config.n_embd),
             h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
@@ -23,7 +23,7 @@ class GPT(nn.Module):
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
         # Weight sharing
-        self.transformers.wte.weight = self.lm_head.weight
+        self.transformer.wte.weight = self.lm_head.weight
 
         # Initialize params
         self.apply(self._init_weights)
@@ -75,8 +75,8 @@ class GPT(nn.Module):
         config = GPTConfig(**config_args)
         model = GPT(config)
         sd = model
-        sd_keys = sd.keys()
-        sd_keys = [k for k in sd.keys() if not k.endswith('.attn.bias')]
+        sd_keys = sd_keys = sd.state_dict().keys()
+        sd_keys = [k for k in sd.state_dict().keys() if not k.endswith('.attn.bias')]
 
         model_hf = GPT2LMHeadModel.from_pretrained(model_type)
         sd_hf = model_hf.state_dict()
@@ -88,13 +88,13 @@ class GPT(nn.Module):
         assert len(sd_keys) == len(sd_keys_hf), f"Mismatch in number of keys: {len(sd_keys)} vs {len(sd_keys_hf)}"
         for k in sd_keys_hf:
             if any(k.endswith(t) for t in transposed):
-                assert sd_hf[k].shape[::-1] == sd[k].shape
+                assert sd_hf[k].shape[::-1] == sd.state_dict()[k].shape
                 with torch.no_grad():
-                    sd[k].copy_(sd_hf[k].t())
+                    sd.state_dict()[k].copy_(sd_hf[k].t())
             else:
-                assert sd_hf[k].shape == sd[k].shape
+                assert sd_hf[k].shape == sd.state_dict()[k].shape
                 with torch.no_grad():
-                    sd[k].copy_(sd_hf[k])
+                    sd.state_dict()[k].copy_(sd_hf[k])
         return model
     
     def configure_optimizers(self, weight_decay, learning_rate, device):
@@ -111,9 +111,9 @@ class GPT(nn.Module):
         num_no_decay_params = sum(p.numel() for p in no_decay_params)
 
         # Create AdamW optimizer and use the fused version if it is available
-        fused_available = 'fused' in inspect.signature(torch.optim.AdamW).parameters
+        fused_available = 'fused' in inspect.signature(optim.AdamW).parameters
         use_fused = fused_available and 'cuda' in device
 
-        optimizer = torch.optim.AdamW(optim_group, lr=learning_rate)
+        optimizer = optim.AdamW(optim_group, lr=learning_rate)
         return optimizer
 
