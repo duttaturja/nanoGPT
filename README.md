@@ -85,25 +85,26 @@ python train.py
 ### 2. Text Generation
 Generate text from a trained checkpoint:
 ```bash
-python nanoGPT.py
+python GPT.py
 ```
-<!--
 ### 3. Federated Learning (Flower)
+#### Start simulation:
+```bash
+python federated.py --iid
+```
 #### Start Server:
 ```bash
-python -m nanoGPT.GPT fl_server --rounds 3
+python -m Federated_Learning.server
 ```
 
 #### Start Clients (in separate terminals):
 ```bash
-python -m nanoGPT.GPT fl_client --cid 0 --clients 3 --epochs 1
-python -m nanoGPT.GPT fl_client --cid 1 --clients 3 --epochs 1
-python -m nanoGPT.GPT fl_client --cid 2 --clients 3 --epochs 1
+python -m Federated_Learning.client --cid=0
+python -m Federated_Learning.client --cid=1
 ```
 > Each client trains on its own partition of Tiny Shakespeare and syncs with the central server.
 
 ---
--->
 ## Project Structure
 
 ```
