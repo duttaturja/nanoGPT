@@ -3,9 +3,8 @@
 This repository is a personal project inspired by Andrej Karpathy's [nanoGPT](https://github.com/karpathy/build-nanoGPT) and his instructional video on constructing GPT models from scratch. The aim is to delve deep into the architecture and training processes of Generative Pre-trained Transformer (GPT) models, providing a hands-on approach to understanding their inner workings. The implementation shown in his video is in Separated folder named "Andrej Karpathy's Implementation".
 
 My Implementation is an advanced, modular implementation of nanoGPT with:
-- **Custom Transformer Architecture** 
 - **Federated Learning via Flower**
-- **Local Training / Text Generation / CLI Interface**
+- **Local Training / Text Generation**
 - **Designed for extensibility and real-world FL simulations**
 
 ## Table of Contents
@@ -21,7 +20,7 @@ My Implementation is an advanced, modular implementation of nanoGPT with:
 
 ##  Introduction
 
-GPT models have significantly advanced natural language processing by enabling machines to generate human-like text. This project endeavors to reconstruct a nano-scale GPT model from the ground up, offering insights into the architecture and training methodologies of GPT models. By following this guide, you'll gain a comprehensive understanding of how GPT models function and how to implement them.
+GPT(Generative pre-trained transformer) models have significantly advanced natural language processing by enabling machines to generate human-like text. This project endeavors to reconstruct a nano-scale GPT model from the ground up, offering insights into the architecture and training methodologies of GPT models. By following this guide, you'll gain a comprehensive understanding of how GPT models function and how to implement them.
 
 ## Features
 
