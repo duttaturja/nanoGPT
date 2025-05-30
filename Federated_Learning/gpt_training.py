@@ -13,7 +13,7 @@ def train_one_epoch(model, dataloader, device, lr):
         x, y = x.to(device), y.to(device)
 
         logits = model(x)
-        if isinstance(logits, tuple):           # <-- handle tuple output
+        if isinstance(logits, tuple):  # <-- handle tuple output
             logits = logits[0]
 
         loss = loss_fn(

@@ -4,11 +4,14 @@ import torch.nn.functional as F
 import math
 import inspect
 
+
 # Casual Self-Attention Layer
 class CasualSelfAttention(nn.Module):
     def __init__(self, config):
         super().__init__()
-        assert config.n_embd % config.n_head == 0, "Embedding dimension must be divisible by number of heads"
+        assert config.n_embd % config.n_head == 0, (
+            "Embedding dimension must be divisible by number of heads"
+        )
         # q, k, v projections for all heads, but in a batch
         self.c_attn = nn.Linear(config.n_embd, config.n_embd * 3)
         # output projection
@@ -28,19 +31,22 @@ class CasualSelfAttention(nn.Module):
         k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         # flash attention
-        flash_attn = F.scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0)
+        flash_attn = F.scaled_dot_product_attention(
+            q, k, v, attn_mask=None, dropout_p=0.0
+        )
         flash_attn = flash_attn.transpose(1, 2).contiguous().view(B, T, C)
 
         # output projection
         flash_attn = self.c_proj(flash_attn)
         return flash_attn
-    
+
+
 # Multi-Layer Perceptron for Feed Forward Network
 class MLP(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd)
-        self.gelu = nn.GELU(approximate='tanh')
+        self.gelu = nn.GELU(approximate="tanh")
         self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd)
         # regularization parameter
         self.c_proj.NANOGPT_SCALE_INIT = 1
@@ -50,7 +56,8 @@ class MLP(nn.Module):
         x = self.gelu(x)
         x = self.c_proj(x)
         return x
-    
+
+
 # Basic transformer block
 class Block(nn.Module):
     def __init__(self, config):

@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 
+
 class TokenDataset(Dataset):
     def __init__(self, tokenizer, texts, block_size):
         self.data = []

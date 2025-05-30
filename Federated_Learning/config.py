@@ -4,4 +4,3 @@ LR = 6e-4
 BATCH_SIZE = 32
 BLOCK_SIZE = 128
 DEVICE = "cpu"
-

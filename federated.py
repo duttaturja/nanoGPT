@@ -1,4 +1,5 @@
-import flwr as fl
+import vlwr as fl
+import torch
 from torch.utils.data import DataLoader
 
 from Federated_Learning.data_utils import load_and_partition_dataset
@@ -16,14 +17,12 @@ partitions, VOCAB_SIZE = load_and_partition_dataset(
 
 def client_fn(cid: str):
     cid_int = int(cid)  # Flower still passes a string
-    trainloader = DataLoader(
-        partitions[cid_int], batch_size=BATCH_SIZE, shuffle=True
-    )
+    trainloader = DataLoader(partitions[cid_int], batch_size=BATCH_SIZE, shuffle=True)
     return GPTClient(trainloader, VOCAB_SIZE)
 
 
 if __name__ == "__main__":
-    fl.simulation.start_simulation(          # still works, ignore deprecation msg
+    fl.simulation.start_simulation(  # still works, ignore deprecation msg
         client_fn=client_fn,
         num_clients=NUM_CLIENTS,
         config=fl.server.ServerConfig(num_rounds=10),
